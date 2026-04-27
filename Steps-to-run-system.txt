@@ -1,0 +1,107 @@
+==============================================================
+  CyberSecurity Auth System — Setup & Run Guide
+==============================================================
+
+Stack
+- Backend  : Python FastAPI + SQLAlchemy + MySQL + JWT (python-jose) + bcrypt
+- Frontend : React + TypeScript + Vite + TailwindCSS
+- Database : MySQL (auto-migrated on backend startup)
+
+--------------------------------------------------------------
+PREREQUISITES
+--------------------------------------------------------------
+- Python 3.11+
+- Node 18+
+- A running MySQL instance with a database named `authdb`
+  (CREATE DATABASE authdb;)
+
+--------------------------------------------------------------
+1) BACKEND SETUP
+--------------------------------------------------------------
+1. Open a terminal
+2. cd backend
+3. Create / activate a venv:
+       python -m venv venv
+       venv\Scripts\activate          (Windows)
+       source venv/bin/activate       (mac/linux)
+4. Install dependencies:
+       pip install -r requirements.txt
+5. Confirm backend\.env contains:
+       DATABASE_URL=mysql+pymysql://root:@localhost:3306/authdb
+       SECRET_KEY=myverysecuresecretkey
+       ALGORITHM=HS256
+       ACCESS_TOKEN_EXPIRE_MINUTES=30
+   Adjust DATABASE_URL for your MySQL user/password if needed.
+6. Run the server:
+       uvicorn app.main:app --reload
+
+On first start the backend will:
+  - auto-create the `users`, `departments`, `employees`,
+    `login_attempts`, `password_resets` tables
+  - auto-create a default admin account:
+       email   : admin@example.com
+       password: admin123
+       role    : admin
+
+API root: http://127.0.0.1:8000
+Swagger : http://127.0.0.1:8000/docs
+
+--------------------------------------------------------------
+2) FRONTEND SETUP
+--------------------------------------------------------------
+1. Open another terminal
+2. cd frontend
+3. Install dependencies:
+       npm install
+4. Run the dev server:
+       npm run dev
+5. Open http://localhost:5173
+
+--------------------------------------------------------------
+3) ROLE-BASED ROUTES
+--------------------------------------------------------------
+- Login:                 /
+- Register (employee):   /register
+- Forgot password:       /forgot
+- Admin dashboard:       /admin       (requires role=admin)
+- Employee dashboard:    /employee    (requires role=employee)
+
+Login as the default admin (admin@example.com / admin123) to:
+  - Create departments
+  - Create employees (also auto-creates their user)
+  - View all employees with department/user info
+
+Register a new account (or have admin create one) to land on
+the employee dashboard, where the user can:
+  - View / edit their profile
+  - Pick or change their department
+  - Update password (requires the current password)
+
+--------------------------------------------------------------
+4) KEY API ENDPOINTS
+--------------------------------------------------------------
+PUBLIC
+  POST  /register
+  POST  /login                       -> returns JWT + role
+  POST  /forgot-password
+  POST  /reset-password
+  GET   /security-question
+
+ADMIN (Authorization: Bearer <token>, role=admin)
+  POST   /departments
+  GET    /departments
+  POST   /employees
+  GET    /employees
+  DELETE /employees/{id}
+
+EMPLOYEE (Authorization: Bearer <token>)
+  GET   /profile
+  PUT   /profile
+  PUT   /profile/password
+  PUT   /profile/department
+
+--------------------------------------------------------------
+5) COMMON QUICK COMMANDS
+--------------------------------------------------------------
+Backend  : cd backend  && venv\Scripts\activate && uvicorn app.main:app --reload
+Frontend : cd frontend && npm run dev
